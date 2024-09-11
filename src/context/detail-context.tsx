@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 type detailsProps = {
   firstName?: string;
@@ -40,7 +46,6 @@ type DetailContextProps = {
     value: string;
   }) => void;
   layout?: layoutProps;
-  updateLayout?: (layout: layoutProps) => void;
   styleConfig?: null;
 };
 
@@ -64,17 +69,48 @@ const defaultSocialMediaDetails = {
 };
 const DetailContext = createContext<DetailContextProps | null>(null);
 
+const getLocalStorageDetails = () => {
+  if (typeof Storage !== "undefined") {
+    const localStorageDetails = localStorage.getItem("details");
+    if (localStorageDetails) {
+      return JSON.parse(localStorageDetails);
+    }
+  }
+  return defaultDetails;
+};
+const getLocalStorageSocialMediaDetails = () => {
+  if (typeof Storage !== "undefined") {
+    const localStorageSocialMediaDetails =
+      localStorage.getItem("socialMediaDetails");
+    if (localStorageSocialMediaDetails) {
+      return JSON.parse(localStorageSocialMediaDetails);
+    }
+  }
+  return defaultSocialMediaDetails;
+};
 export const DetailProvider = ({ children }: { children: ReactNode }) => {
-  const [details, setDetails] = useState<detailsProps>(defaultDetails);
+  const [details, setDetails] = useState<detailsProps>(
+    getLocalStorageDetails(),
+  );
+  console.log("details", details);
   const [socialMediaDetails, setSocialMediaDetails] =
-    useState<socialMediaDetailsProps>(defaultSocialMediaDetails);
+    useState<socialMediaDetailsProps>(getLocalStorageSocialMediaDetails());
   const [layout, setLayout] = useState<layoutProps>("layout-one");
+
+  useEffect(() => {
+    if (typeof Storage !== "undefined") {
+      localStorage.setItem("details", JSON.stringify(details));
+      localStorage.setItem(
+        "socialMediaDetails",
+        JSON.stringify(socialMediaDetails),
+      );
+    }
+  }, [details, socialMediaDetails, layout]);
 
   const updateDetails = ({ key, value }: { key: string; value: string }) => {
     setDetails(
       (prev: detailsProps): detailsProps => ({ ...prev, [key]: value }),
     );
-    console.log(details);
   };
   const updateSocialMediaDetails = ({
     key,
@@ -90,9 +126,7 @@ export const DetailProvider = ({ children }: { children: ReactNode }) => {
       }),
     );
   };
-  const updateLayout = (layout: layoutProps) => {
-    setLayout(layout);
-  };
+
   return (
     <DetailContext.Provider
       value={{
@@ -101,7 +135,6 @@ export const DetailProvider = ({ children }: { children: ReactNode }) => {
         socialMediaDetails,
         updateSocialMediaDetails,
         layout,
-        updateLayout,
       }}
     >
       {children}
