@@ -1,6 +1,6 @@
 "use client";
 
-import { InputField } from "@/components/input-field";
+import { InputField } from "@/components/input/text-field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDetail } from "@/context/detail-context";
 

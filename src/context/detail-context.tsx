@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+// import { TABS } from "@/constants";
 
 type detailsProps = {
   firstName?: string;
@@ -34,6 +35,15 @@ type layoutProps =
   | "layout-five"
   | "layout-six";
 
+// type tabsProps = (typeof TABS)[number]["value"] | null;
+
+type styleConfigProps = {
+  themeColor?: string;
+  textColor?: string;
+  linkColor?: string;
+  fontSize?: "small" | "medium" | "large";
+};
+
 type DetailContextProps = {
   details: detailsProps;
   updateDetails: ({ key, value }: { key: string; value: string }) => void;
@@ -45,8 +55,11 @@ type DetailContextProps = {
     key: string;
     value: string;
   }) => void;
-  layout?: layoutProps;
-  styleConfig?: null;
+  layout: layoutProps;
+  updateLayout: (value: layoutProps) => void;
+  styleConfig: styleConfigProps;
+  loading: boolean;
+  updateStyleConfig: ({ key, value }: { key: string; value: string }) => void;
 };
 
 const defaultDetails = {
@@ -66,6 +79,12 @@ const defaultSocialMediaDetails = {
   facebook: "",
   github: "",
   instagram: "",
+};
+const defaultStyleConfig = {
+  themeColor: "#007bff",
+  textColor: "#000000",
+  linkColor: "#007bff",
+  fontSize: "small",
 };
 const DetailContext = createContext<DetailContextProps | null>(null);
 
@@ -88,15 +107,37 @@ const getLocalStorageSocialMediaDetails = () => {
   }
   return defaultSocialMediaDetails;
 };
+const getLocalStorageLayout = () => {
+  if (typeof Storage != "undefined") {
+    const localStorageLayout = localStorage.getItem("layout");
+    if (localStorageLayout) {
+      return localStorageLayout as layoutProps;
+    }
+  }
+  return "layout-one";
+};
+
+const getLocalStyleConfig = () => {
+  if (typeof Storage != "undefined") {
+    const localStorageStyleConfig = localStorage.getItem("styleConfig");
+    if (localStorageStyleConfig) {
+      return JSON.parse(localStorageStyleConfig);
+    }
+  }
+  return defaultStyleConfig;
+};
+
 export const DetailProvider = ({ children }: { children: ReactNode }) => {
   const [details, setDetails] = useState<detailsProps>(
     getLocalStorageDetails(),
   );
-  console.log("details", details);
   const [socialMediaDetails, setSocialMediaDetails] =
     useState<socialMediaDetailsProps>(getLocalStorageSocialMediaDetails());
-  const [layout, setLayout] = useState<layoutProps>("layout-one");
-
+  const [layout, setLayout] = useState<layoutProps>(getLocalStorageLayout());
+  const [loading, setLoading] = useState(true);
+  const [styleConfig, setStyleConfig] = useState<styleConfigProps>(
+    getLocalStyleConfig(),
+  );
   useEffect(() => {
     if (typeof Storage !== "undefined") {
       localStorage.setItem("details", JSON.stringify(details));
@@ -104,14 +145,20 @@ export const DetailProvider = ({ children }: { children: ReactNode }) => {
         "socialMediaDetails",
         JSON.stringify(socialMediaDetails),
       );
+      localStorage.setItem("layout", layout);
+      localStorage.setItem("styleConfig", JSON.stringify(styleConfig));
+      setLoading(false);
     }
-  }, [details, socialMediaDetails, layout]);
-
+  }, [details, socialMediaDetails, layout, styleConfig]);
   const updateDetails = ({ key, value }: { key: string; value: string }) => {
     setDetails(
       (prev: detailsProps): detailsProps => ({ ...prev, [key]: value }),
     );
   };
+  const updateLayout = (value: layoutProps) => {
+    setLayout(value);
+  };
+
   const updateSocialMediaDetails = ({
     key,
     value,
@@ -126,6 +173,17 @@ export const DetailProvider = ({ children }: { children: ReactNode }) => {
       }),
     );
   };
+  const updateStyleConfig = ({
+    key,
+    value,
+  }: {
+    key: string;
+    value: string;
+  }) => {
+    setStyleConfig(
+      (prev: styleConfigProps): styleConfigProps => ({ ...prev, [key]: value }),
+    );
+  };
 
   return (
     <DetailContext.Provider
@@ -135,6 +193,10 @@ export const DetailProvider = ({ children }: { children: ReactNode }) => {
         socialMediaDetails,
         updateSocialMediaDetails,
         layout,
+        updateLayout,
+        loading,
+        styleConfig,
+        updateStyleConfig,
       }}
     >
       {children}
